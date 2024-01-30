@@ -1,0 +1,24 @@
+samples:
+    # sample or id to use for generating targets
+    bam_id: "data"
+    fq_id: "data"
+    id: "data"
+    
+modules:
+    # Should snakemake do stlfr specific analyses, false if the library isn't of linked reads
+    mapping: True
+    # anatation and classify
+    classifed: True
+    
+params:
+    # reference 
+    ref_T2T: "/research/rv-02/home/zhenyuluo/reference/GRCh38/GRCh38_latest_genomic.fa"
+    CPC_pangenome: 
+    # repeats region 
+    repeats: 
+    # kraken2 database
+    k2_viral: 
+    PlusPF_k2: 
+
+threads:
+    bwa: 24
