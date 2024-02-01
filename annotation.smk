@@ -37,7 +37,7 @@ rule diversity:
         alpha_diversity = "04_annotation/{id}.alpha_beta_diversity.stats",
         beta_diversity = "04_annotation/{id}.beta_diversity.stats"
     shell:
-        "alpha_diversity.py -f $id.bracken -a BP >> alpha_beta_diversity.stats | "
+        "alpha_diversity.py -f $id.bracken -a BP >> alpha_beta_diversity.stats && "
         "beta_diversity.py -i $id.bracken --type bracken >> alpha_beta_diversity.stats"
         
 rule krona:
@@ -47,7 +47,7 @@ rule krona:
         krona_txt = '04_annotation/{id}.krona.txt',
         krona_html = '04_annotation/{id}.krona.html'
     shell:
-        'kreport2krona.py -r {input.breport} -o {output.krona_txt} --no-intermediate-ranks | '
+        'kreport2krona.py -r {input.breport} -o {output.krona_txt} --no-intermediate-ranks &&  '
         'ktImportText {output.krona_txt} -o {output.krona_html}'
 
 
@@ -90,8 +90,8 @@ rule merge_viral_unclass:
         fa2 = '04_annotation/{id}_viral_unclass.R2.fa',
         all_fa = '04_annotation/{id}_viral_unclass.all.fa'
     shell:
-        "cat {input.viral_fa1} {input.unclass_fa1} > {output.fa1} | "
-        "cat {input.viral_fa2} {input.unclass_fa2} > {output.fa2} | "
+        "cat {input.viral_fa1} {input.unclass_fa1} > {output.fa1} && "
+        "cat {input.viral_fa2} {input.unclass_fa2} > {output.fa2} && "
         "cat {output.fa1} {output.fa2} > {output.all_fa}"
         
 rule blastn:
