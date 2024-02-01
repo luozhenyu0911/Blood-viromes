@@ -87,8 +87,22 @@ rule merge_viral_unclass:
         unclass_fa2 = "04_annotation/{id}.unclass.R2.fa"
     output:
         fa1 = '04_annotation/{id}_viral_unclass.R1.fa',
-        fa2 = '04_annotation/{id}_viral_unclass.R2.fa'
+        fa2 = '04_annotation/{id}_viral_unclass.R2.fa',
+        all_fa = '04_annotation/{id}_viral_unclass.all.fa'
     shell:
         "cat {input.viral_fa1} {input.unclass_fa1} > {output.fa1} | "
-        "cat {input.viral_fa2} {input.unclass_fa2} > {output.fa2}"
-    
+        "cat {input.viral_fa2} {input.unclass_fa2} > {output.fa2} | "
+        "cat {output.fa1} {output.fa2} > {output.all_fa}"
+        
+rule blastn:
+    input:
+        all_fa = '04_annotation/{id}_viral_unclass.all.fa',
+        db = config['params']['blastn_db']
+    output:
+        "04_annotation/{id}_virus_unclss.blastn.res.txt"
+    threads:
+        int(config['threads']['bwa'])-1
+    shell:
+        "blastn -query {input.all_fa} -db {input.db}.db -outfmt 7 -evalue 0.00001 "
+            "-max_target_seqs 1 -num_threads {threads} -out {output}"
+            
