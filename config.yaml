@@ -1,9 +1,10 @@
 samples:
     # sample or id to use for generating targets
-    bam_id: "data"
-    fq_id: "data"
-    id: "data"
-    
+    # rmdup_bam: "input/14100648BFF2.sorted.markdup.BQSR.cram"
+    # fq1: "input/14100648BFF2_6X_R1.fq.gz"
+    # fq2: "input/14100648BFF2_6X_R2.fq.gz"
+    id: "14100648BFF2_6X"
+    fq_path: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/20240110_blood_viromes/input"
 modules:
     # Should snakemake do stlfr specific analyses, false if the library isn't of linked reads
     mapping: True
@@ -12,13 +13,16 @@ modules:
     
 params:
     # reference 
-    ref_T2T: "/research/rv-02/home/zhenyuluo/reference/GRCh38/GRCh38_latest_genomic.fa"
-    CPC_pangenome: 
+    smk_path: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/blood_viromes" 
+    # smk_path: "./"
+    ref_T2T: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/human/chm13v2.0.fa"
+    ref_pangenome: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/Chinese_Pangenome/CPC.Phase1.CHM13v2-full_decoy.fa"
     # repeats region 
-    repeats: 
+    repeats: "/WORK/gzfezx_shhli_3/BioDatahub/human_reference/GRCh38/LCR-hs38_rmsk.bed"
     # kraken2 database
     k2_viral: 
-    PlusPF_k2: 
+    blastn_db: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/nt_db/nt"
+    PlusPF_k2: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/PlusPF_k2"
 
 threads:
     bwa: 24
