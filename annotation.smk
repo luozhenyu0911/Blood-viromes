@@ -106,3 +106,17 @@ rule blastn:
         "blastn -query {input.all_fa} -db {input.db}.db -outfmt 7 -evalue 0.00001 "
             "-max_target_seqs 1 -num_threads {threads} -out {output}"
             
+rule blastn_anno:
+    input:
+        res_blast = "04_annotation/{id}_virus_unclss.blastn.res.txt",
+        seq_anno = config['params']['blastn_db'] # there is the seq. title (e.g.>NC_004066.1 Lactococcus phage ul36, complete genome) in the fasta file
+    output:
+        "04_annotation/{id}_virus_unclss.blastn.res.anno.txt"
+    threads:
+        int(config['threads']['bwa'])-1
+    params:
+        tools_dir = config['params']['tools']
+    shell:
+        "python {params.tools_dir}/get_annotation.3.py -b {input.res_blast} -a {input.seq_anno}_seqname.txt -o {output}"
+
+

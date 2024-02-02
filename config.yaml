@@ -14,6 +14,8 @@ modules:
 params:
     # reference 
     smk_path: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/blood_viromes" 
+    # tools path
+    tools: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/blood_viromes/tools" 
     # smk_path: "./"
     ref_T2T: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/human/chm13v2.0.fa"
     ref_pangenome: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/Chinese_Pangenome/CPC.Phase1.CHM13v2-full_decoy.fa"

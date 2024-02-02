@@ -16,6 +16,7 @@ def run_all_input(wildcards):
         run_all_files.append("04_annotation/{}.k2_report.txt".format(config['samples']['id']))
         run_all_files.append("metrics/{}_seq_count.txt".format(config['samples']['id']))
         run_all_files.append("04_annotation/{}_virus_unclss.blastn.res.txt".format(config['samples']['id']))
+        run_all_files.append("04_annotation/{}_virus_unclss.blastn.res.anno.txt".format(config['samples']['id']))
         
     return run_all_files
 
