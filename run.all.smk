@@ -15,6 +15,8 @@ def run_all_input(wildcards):
         run_all_files.append('04_annotation/{}_viral_unclass.R2.fa'.format(config['samples']['id']))
         run_all_files.append("04_annotation/{}.k2_report.txt".format(config['samples']['id']))
         run_all_files.append("metrics/{}_seq_count.txt".format(config['samples']['id']))
+        run_all_files.append("04_annotation/{}.beta_diversity.stats".format(config['samples']['id']))
+        run_all_files.append("04_annotation/{}.alpha_beta_diversity.stats".format(config['samples']['id']))
         run_all_files.append("04_annotation/{}_virus_unclss.blastn.res.txt".format(config['samples']['id']))
         run_all_files.append("04_annotation/{}_virus_unclss.blastn.res.anno.txt".format(config['samples']['id']))
         

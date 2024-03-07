@@ -37,8 +37,8 @@ rule diversity:
         alpha_diversity = "04_annotation/{id}.alpha_beta_diversity.stats",
         beta_diversity = "04_annotation/{id}.beta_diversity.stats"
     shell:
-        "alpha_diversity.py -f $id.bracken -a BP >> alpha_beta_diversity.stats && "
-        "beta_diversity.py -i $id.bracken --type bracken >> alpha_beta_diversity.stats"
+        "alpha_diversity.py -f {input.bracken} -a BP >> alpha_beta_diversity.stats && "
+        "beta_diversity.py -i {input.bracken} --type bracken >> alpha_beta_diversity.stats"
         
 rule krona:
     input:
