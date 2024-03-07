@@ -1,11 +1,6 @@
 # include the config file
 configfile: "config.yaml"
 
-# Define the ref based on the config file
-# Sort of acts like a global variable so you don't need to always type the whole thing
-REF = config['params']['ref_fa']
-
-
 # define a function to return target files based on config settings
 def run_all_input(wildcards):
 
@@ -13,14 +8,29 @@ def run_all_input(wildcards):
     # if mapping is set to true add fragment calculation metrics
     if config['modules']['mapping']:
 
-        run_all_files.append("Align/{}_gene_count.txt".format(config['samples']['id']))
-        run_all_files.append("Align/{}_transcript_count.txt".format(config['samples']['id']))
-        run_all_files.append("Align/{}.uniq.bam_coverage_depth.txt".format(config['samples']['id']))
-        run_all_files.append("Align/{}.raw.flagstat.txt".format(config['samples']['id']))
-        run_all_files.append("Align/{}.uniq.flagstat.txt".format(config['samples']['id']))
-
- 
-
+        run_all_files.append("03_align2pg/{}.rm_pg.R1.fq.gz".format(config['samples']['id']))
+        run_all_files.append("03_align2pg/{}.rm_pg.R2.fq.gz".format(config['samples']['id']))
+        run_all_files.append('04_annotation/{}.krona.html'.format(config['samples']['id']))
+        #run_all_files.append('04_annotation/{}_viral_unclass.R1.fa'.format(config['samples']['id']))
+        #run_all_files.append('04_annotation/{}_viral_unclass.R2.fa'.format(config['samples']['id']))
+        run_all_files.append("04_annotation/{}.k2_report.txt".format(config['samples']['id']))
+        run_all_files.append("metrics/{}_seq_count.txt".format(config['samples']['id']))
+        #run_all_files.append("04_annotation/{}.beta_diversity.stats".format(config['samples']['id']))
+        #run_all_files.append("04_annotation/{}.alpha_beta_diversity.stats".format(config['samples']['id']))
+        #run_all_files.append("05_viral_anno/{}.viral.beta_diversity.stats".format(config['samples']['id']))
+        run_all_files.append('05_viral_anno/{}.viral.krona.html'.format(config['samples']['id']))
+        run_all_files.append("metrics/{}.overlap_viral_singleton.id".format(config['samples']['id']))
+        run_all_files.append("07_single_virus/{}.singleton_map2virus.mapped.id".format(config['samples']['id']))
+        
+        #run_all_files.append("04_annotation/{}_virus_unclss.blastn.res.txt".format(config['samples']['id']))
+        #run_all_files.append("04_annotation/{}_virus_unclss.blastn.res.anno.txt".format(config['samples']['id']))
+        # assembly
+        run_all_files.append('06_assembly/01_metaspades_quast')
+        run_all_files.append('06_assembly/02_spades_quast')
+        run_all_files.append('06_assembly/03_megahit_quast')
+        run_all_files.append('06_assembly/01_metaspades')
+        run_all_files.append('06_assembly/02_spades')
+        run_all_files.append('06_assembly/03_megahit')
     return run_all_files
 
 
@@ -28,5 +38,11 @@ def run_all_input(wildcards):
 rule run_all:
     input:
         run_all_input
+		
 smk_path = config['params']['smk_path']
 include: smk_path+"/map.smk"
+include: smk_path+"/annotation.smk"
+include: smk_path+"/annotation_viral.smk"
+include: smk_path+"/metrics.smk"
+include: smk_path+"/assemly.smk"
+include: smk_path+"/singleton2virus.smk"

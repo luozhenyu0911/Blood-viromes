@@ -1,207 +1,275 @@
 
+from pathlib import Path
+
+def get_fastqs_one(wildcards):
+    fq_path = Path(config['samples']['fq_path'])
+    name = config['samples']['id']
+    fq_files = []
+    for fp in fq_path.iterdir():
+        # add the fastq file to the files list if it matches
+        if fp.is_file and str(name) in str(fp) and str(fp).endswith("1.fq.gz"):
+            print(fp)
+            fq_files.append(str(fp))
+    return fq_files    
+
+
+def get_fastqs_two(wildcards):
+    fq_path = Path(config['samples']['fq_path'])
+    name = config['samples']['id']
+    fq_files = []
+    for fp in fq_path.iterdir():
+        # add the fastq file to the files list if it matches
+        if fp.is_file and str(name) in str(fp) and str(fp).endswith("2.fq.gz"):
+            print(fp)
+            fq_files.append(str(fp))
+    return fq_files   
+
+def get_cram(wildcards):
+    fq_path = Path(config['samples']['fq_path'])
+    name = config['samples']['id']
+    cram_files = []
+    for fp in fq_path.iterdir():
+        # add the fastq file to the files list if it matches
+        if fp.is_file and str(name).split('_')[0] in str(fp) and str(fp).endswith(".cram"):
+            print(fp)
+            cram_files.append(str(fp))
+    return cram_files 
+
+def get_cram_index(wildcards):
+    fq_path = Path(config['samples']['fq_path'])
+    name = config['samples']['id']
+    cram_files = []
+    for fp in fq_path.iterdir():
+        # add the fastq file to the files list if it matches 
+        if fp.is_file and str(name).split('_')[0] in str(fp) and str(fp).endswith(".crai"):
+            print(fp)
+            cram_files.append(str(fp))
+    return cram_files
+
+rule link_read_one:
+    input:
+        get_fastqs_one
+    output:
+        "data/{id}.R1.fq.gz"
+    run:
+        shell("ln -s {input} {output}")
+
+rule link_read_two:
+    input:
+        get_fastqs_two
+    output:
+        "data/{id}.R2.fq.gz"
+    run:
+        shell("ln -s {input} {output}")
+
+rule link_cram:
+    input:
+        get_cram
+    output:
+        "data/{id}.cram"
+    run:
+        shell("ln -s {input} {output}")
+
+rule link_cram_index:
+    input:
+        get_cram_index
+    output:
+        "data/{id}.cram.crai"
+    run:
+        shell("ln -s {input} {output}")
 
 # remove human seq. against hg38
 rule rm_hg38seqs:
-	input:
-		"input/{}.bam".format(config['sample']['bam_id'])
-	output:
-		"01_align2hg38/{}.unmapped_hg38.bam".format(config['sample']['id']
-	threads:
-		config['threads']['bwa']
-	shell:
-		"samtools view -@ {threads} -bh -f 4 {input} > {output}"
+    input:
+        "data/{id}.cram"
+    output:
+        # "01_align2hg38/{}.unmapped_hg38.bam".format(config['samples']['id'])
+        "01_align2hg38/{id}.unmapped_hg38.bam"
+    threads:
+        config['threads']['bwa']
+    shell:
+        "samtools view -@ {threads} -bh -f 4 {input} > {output}"
 
 # remove LCR-hs38_rmsk seq
 rule rm_repeats:
-	input:
-		bam = "01_align2hg38/{id}.unmapped_hg38.bam"
-		region = config['params']['repeats']
-	output:
-		in_bam = "01_align2hg38/{id}.is_repeats.bam"
-		out_bam = "01_align2hg38/{id}.rm_repeats.bam"
-	threads:
-		config['threads']['bwa']
-	shell:
-		"samtools view -@ {threads} -bh -o {output.in_bam} -U {output.out_bam} -L {region}"
+    input:
+        bam = "01_align2hg38/{id}.unmapped_hg38.bam",
+        region = config['params']['repeats']
+    output:
+        in_bam = "01_align2hg38/{id}.is_repeats.bam",
+        out_bam = "01_align2hg38/{id}.rm_repeats.bam"
+    threads:
+        config['threads']['bwa']
+    shell:
+        "samtools view -@ {threads} {input.bam} -bh -o {output.in_bam} -U {output.out_bam} -L {input.region}"
 
 # get fq1 after rm hg38 and repeats seq.
-rule fq1:
-	input:
-		out_bam = "01_align2hg38/{id}.rm_repeats.bam"
-		rawfq1 = config['sample']['fq1']
-		rawfq1 = config['sample']['fq2']
-	output:
-		seq_id = "01_align2hg38/{id}.rm_repeats.id"
-		R1_id = "01_align2hg38/{id}.rm_repeats.R1.id"
-		R2_id = "01_align2hg38/{id}.rm_repeats.R2.id"
-		out_bam = "01_againsthg38/{id}.rm_repeats.bam"
-		rmrepeats_fq1 = "01_againsthg38/{id}.rm_repeats.R1.fq.gz"
-		rmrepeats_fq2 = "01_againsthg38/{id}.rm_repeats.R2.fq.gz"
-	threads:
-		config['threads']['bwa']
-	shell:
-		"samtools view -@ {threads} {input.out_bam} | cut -f1|sort -u > {output.seq_id} &&"
-		"awk '{{print $1"/1"}}' {output.seq_id} > {output.R1_id} && "
-		"awk '{{print $1"/2"}}' {output.seq_id} > {output.R2_id} && "
-		"seqtk subseq {input.rawfq1} {output.R1_id} |gzip > {output.rmrepeats_fq1} && "
-		"seqtk subseq {input.rawfq2} {output.R2_id} |gzip > {output.rmrepeats_fq1} "
+rule unmapped_seqid:
+    input:
+        out_bam = "01_align2hg38/{id}.rm_repeats.bam"
+    output:
+        seq_id = "01_align2hg38/{id}.rm_repeats.id"
+    threads:
+        config['threads']['bwa']
+    shell:
+        "samtools view -@ {threads} {input.out_bam} | cut -f1|sort -u > {output.seq_id}"
+
+# get EBV id
+rule mapped_EBV_seqid:
+    input:
+        cram = "data/{id}.cram",
+        index = "data/{id}.cram.crai"
+    output:
+        "01_align2hg38/{id}.EBV.seqid"
+    threads:
+        config['threads']['bwa']
+    shell:
+        "samtools view {input.cram} chrEBV|cut -f1 > {output}"
+
+# merge EBV and rm_repeats.id
+rule merge_EBV_rm_repeats_id:
+    input:
+        repeatid="01_align2hg38/{id}.rm_repeats.id",
+        EBVid = "01_align2hg38/{id}.EBV.seqid"
+    output:
+        mergeid = "01_align2hg38/{id}.rm_repeats_EBV.id"
+    shell:
+        "cat {input.repeatid} {input.EBVid} |sort -u > {output.mergeid}"
+
+# get fq1 after rm hg38 and repeats seq.
+rule unmapped_fq1:
+    input:
+        seq_id = "01_align2hg38/{id}.rm_repeats_EBV.id",
+        rawfq1 = "data/{id}.R1.fq.gz"
+    output:
+        R1_id = "01_align2hg38/{id}.rm_repeats.R1.id",
+        rmrepeats_fq1 = "01_align2hg38/{id}.rm_repeats.R1.fq.gz"
+    threads:
+        config['threads']['bwa']
+    shell:
+        "awk '{{print $1\"/1\"}}' {input.seq_id} > {output.R1_id} && "
+        "seqtk subseq {input.rawfq1} {output.R1_id} |gzip > {output.rmrepeats_fq1}"
+
+# get fq2 after rm hg38 and repeats seq.
+rule unmapped_fq2:
+    input:
+        seq_id = "01_align2hg38/{id}.rm_repeats_EBV.id",
+        rawfq2 = "data/{id}.R2.fq.gz"
+    output:
+        R2_id = "01_align2hg38/{id}.rm_repeats.R2.id",
+        rmrepeats_fq2 = "01_align2hg38/{id}.rm_repeats.R2.fq.gz"
+    threads:
+        config['threads']['bwa']
+    shell:
+        "awk '{{print $1\"/2\"}}' {input.seq_id} > {output.R2_id} && "
+        "seqtk subseq {input.rawfq2} {output.R2_id} |gzip > {output.rmrepeats_fq2} "
 
 # remove Ref T2T seq
 rule Align2T2T:
-	input:
-		rmrepeats_fq1 = "01_againsthg38/{id}.rm_repeats.R1.fq.gz"
-		rmrepeats_fq2 = "01_againsthg38/{id}.rm_repeats.R2.fq.gz"
-	output:
-		T2T_bam = "02_againsthg38/{id}.T2T.bam"
-	threads:
-		config['threads']['bwa']
-	shell:
-		"samtools view -@ {threads} -bh -o {output.in_bam} -U {output.out_bam} -L {region}"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-samtools view $id.in.bam |cut -f1|sort -u > $id.in.seqid
-samtools view $i |cut -f1|sort -u > $i.total.seqid
-
-
-samtools view -@ 24 $i -b -h -o $id.in.bam -U $id.out.bam -L LCR-hs38_rmsk.bed
-
-
-
-
-
-# Rule for mapping
-rule map_reads:
     input:
-        ref = REF,
-        fq_1 = expand("{sample}", sample=config['samples']['fq_1']),
-        fq_2 = expand("{sample}", sample=config['samples']['fq_2'])
+        ref_T2T = config['params']['ref_T2T'],
+        rmrepeats_fq1 = "01_align2hg38/{}.rm_repeats.R1.fq.gz".format(config['samples']['id']),
+        rmrepeats_fq2 = "01_align2hg38/{}.rm_repeats.R2.fq.gz".format(config['samples']['id'])
     output:
-        sam = "Align/{}.aln_mem.sam".format(config['samples']['id'])
+        T2T_bam = "02_align2T2T/{id}.T2T.bam"
     threads:
-        config['threads']['hisat2']
+        config['threads']['bwa']
     shell:
-        # map
-        "hisat2 -p {threads} -x {input.ref} -1 {input.fq_1} -2 {input.fq_2} -S {output.sam} 2>Align/aln.err"
+        "bwa mem -C -t {threads} {input.ref_T2T} {input.rmrepeats_fq1} {input.rmrepeats_fq2} | samtools sort -o {output.T2T_bam} -@ 24 -O bam -"
 
-# generate raw bam 
-rule sam2bam:
+# remove human seq. against T2T
+rule rm_T2T:
     input:
-        "Align/{id}.aln_mem.sam"
+        T2T_bam = "02_align2T2T/{id}.T2T.bam"
     output:
-        "Align/{id}.raw.bam"
+        unmapped_bam = "02_align2T2T/{id}.unmapped_T2T.bam",
+        seq_id = "02_align2T2T/{id}.rm_T2T.id"
     threads:
-        config['threads']['hisat2']
+        config['threads']['bwa']
     shell:
-        "samtools view -@ {threads} -bhS {input} -o {output}"
+        "samtools view -@ {threads} -bh -f 4 {input.T2T_bam} > {output.unmapped_bam} && "
+        "samtools view -@ {threads} {output.unmapped_bam} | cut -f1|sort -u > {output.seq_id}"
 
-# filter reads with mapping quality < INT and unmapped
-rule get_uniq_bam:
+# get fq1 after rm T2T.
+rule T2T_unmapped_fq1:
     input:
-        "Align/{id}.raw.bam"
+        seq_id = "02_align2T2T/{id}.rm_T2T.id",
+        fq1 = "01_align2hg38/{}.rm_repeats.R1.fq.gz".format(config['samples']['id'])
     output:
-        "Align/{id}.uniq.bam"
+        R1_id = "02_align2T2T/{id}.rm_T2T.R1.id",
+        rm_T2T_fq1 = "02_align2T2T/{id}.rm_T2T.R1.fq.gz"
     threads:
-        config['threads']['hisat2']
-    params:
-        reads_map_q = config['params']['reads_map_q']
+        config['threads']['bwa']
     shell:
-        "samtools view -@ {threads} -bhS -q {params.reads_map_q} -F 0x400 {input} -o {output}"
+        "awk '{{print $1\"/1\"}}' {input.seq_id} > {output.R1_id} && "
+        "seqtk subseq {input.fq1} {output.R1_id} |gzip > {output.rm_T2T_fq1}"
 
-# sort uniq bam
-rule sort_uniq_bam:
+# get fq2 after rm T2T.
+rule T2T_unmapped_fq2:
     input:
-        "Align/{id}.uniq.bam"
+        seq_id = "02_align2T2T/{id}.rm_T2T.id",
+        fq2 = "01_align2hg38/{}.rm_repeats.R2.fq.gz".format(config['samples']['id'])
     output:
-        "Align/{id}.uniq.sort.bam"
+        R2_id = "02_align2T2T/{id}.rm_T2T.R2.id",
+        rm_T2T_fq2 = "02_align2T2T/{id}.rm_T2T.R2.fq.gz"
     threads:
-        config['threads']['hisat2']
+        config['threads']['bwa']
     shell:
-        "samtools sort -@ {threads} {input} -O bam -o {output} &&"
-        "samtools index -@ {threads} {output}"
+        "awk '{{print $1\"/2\"}}' {input.seq_id} > {output.R2_id} && "
+        "seqtk subseq {input.fq2} {output.R2_id} |gzip > {output.rm_T2T_fq2}"
 
-# samtools flagstat for uniq.bam
-rule flagstat_uniq_bam:
+# rm pangenome + decoy seq.
+
+rule Align2pangenome:
     input:
-        "Align/{id}.uniq.sort.bam"
+        ref_pg = config['params']['ref_pangenome'],
+        rm_T2T_fq1 = "02_align2T2T/{id}.rm_T2T.R1.fq.gz",
+        rm_T2T_fq2 = "02_align2T2T/{id}.rm_T2T.R2.fq.gz"
     output:
-        "Align/{id}.uniq.flagstat.txt"
+        pg_bam = "03_align2pg/{id}.pg.bam"
     threads:
-        config['threads']['hisat2']
+        config['threads']['bwa']
     shell:
-        "samtools flagstat -@ {threads} {input} >> {output}"
-        
-rule flagstat_raw_bam:
+        "bwa mem -C -t {threads} {input.ref_pg} {input.rm_T2T_fq1} {input.rm_T2T_fq2} | samtools sort -o {output.pg_bam} -@ {threads} -O bam -"
+
+# remove human seq. against T2T
+rule rm_pg:
     input:
-        "Align/{id}.raw.bam"
+        pg_bam = "03_align2pg/{id}.pg.bam"
     output:
-        "Align/{id}.raw.flagstat.txt"
+        unmapped_bam = "03_align2pg/{id}.unmapped_pg.bam",
+        seq_id = "03_align2pg/{id}.rm_pg.id"
     threads:
-        config['threads']['hisat2']
+        config['threads']['bwa']
     shell:
-        "samtools flagstat -@ {threads} {input} >> {output}"
+        "samtools view -@ {threads} -bh -f 4 {input.pg_bam} > {output.unmapped_bam} && "
+        "samtools view -@ {threads} {output.unmapped_bam} | cut -f1|sort -u > {output.seq_id}"
 
-
-# get reads count of gene_id or transcript_id 
-rule get_reads_count:
+# get fq1 after rm T2T.
+rule pg_unmapped_fq1:
     input:
-        "Align/{}.uniq.sort.bam".format(config['samples']['id'])
+        seq_id = "03_align2pg/{id}.rm_pg.id",
+        fq1 = "02_align2T2T/{id}.rm_T2T.R1.fq.gz"
     output:
-        gene_count = "Align/{}_gene_count.txt".format(config['samples']['id']),
-        transcript_count = "Align/{}_transcript_count.txt".format(config['samples']['id'])
+        R1_id = "03_align2pg/{id}.rm_pg.R1.id",
+        rm_pg_fq1 = "03_align2pg/{id}.rm_pg.R1.fq.gz"
     threads:
-        config['threads']['featureCounts']
-    params:
-        gtf = config['params']['gtf'],
-        featureCounts = config['params']['featureCounts']
-        
+        config['threads']['bwa']
     shell:
-        "{params.featureCounts} -T {threads} -p -a {params.gtf} -g gene_name -o {output.gene_count} {input} |"
-        "{params.featureCounts} -T {threads} -p -a {params.gtf} -g transcript_id -o {output.transcript_count} {input}"
+        "awk '{{print $1\"/1\"}}' {input.seq_id} > {output.R1_id} && "
+        "seqtk subseq {input.fq1} {output.R1_id} |gzip > {output.rm_pg_fq1}"
 
-# This looks at the coverage across the genome, as well as percent coverage at particular depths (4X, 10X, 30X)
-rule coverage_depth:
+# get fq2 after rm T2T.
+rule pg_unmapped_fq2:
     input:
-        "Align/{id}.uniq.sort.bam"
+        seq_id = "03_align2pg/{id}.rm_pg.id",
+        fq2 = "02_align2T2T/{id}.rm_T2T.R2.fq.gz"
     output:
-        "Align/{id}.uniq.bam_coverage_depth.txt"
-    params:
-        toolsdir = config['params']['toolsdir'],
-        ref = config['params']['ref_fa']
+        R2_id = "03_align2pg/{id}.rm_pg.R2.id",
+        rm_pg_fq2 = "03_align2pg/{id}.rm_pg.R2.fq.gz"
+    threads:
+        config['threads']['bwa']
     shell:
-        "perl {params.toolsdir}/tools/depthV2.0.pl -l $({params.toolsdir}/tools/fasta_non_gapped_bases.py {params.ref}) {input} Align > {output}"
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        "awk '{{print $1\"/2\"}}' {input.seq_id} > {output.R2_id} && "
+        "seqtk subseq {input.fq2} {output.R2_id} |gzip > {output.rm_pg_fq2}"
+		
