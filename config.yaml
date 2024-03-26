@@ -13,9 +13,9 @@ modules:
     
 params:
     # reference 
-    smk_path: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/blood_viromes2" 
+    smk_path: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/blood_viromes3" 
     # tools path
-    tools: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/blood_viromes2/tools" 
+    tools: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/blood_viromes3/tools" 
     # smk_path: "./"
     ref_viral: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/viral_refseq/viral.1.1.genomic.fna"
     ref_T2T: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/human/chm13v2.0.fa"
@@ -24,8 +24,8 @@ params:
     repeats: "/WORK/gzfezx_shhli_3/BioDatahub/human_reference/GRCh38/LCR-hs38_rmsk.bed"
     # kraken2 database
     k2_viral: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/k2_viral_20231009"
-    blastn_db: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/nt_db/nt"
-    PlusPF_k2: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/PlusPF_k2"
+    # blastn_db: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/nt_db/nt"
+    k2_db: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/database/kraken2-microbial-fatfree"
 
 threads:
     bwa: 24
