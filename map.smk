@@ -78,37 +78,24 @@ rule link_cram_index:
     run:
         shell("ln -s {input} {output}")
 
-# remove human seq. against hg38
+# get unmapped seq
 rule rm_hg38seqs:
     input:
         "data/{id}.cram"
     output:
-        # "01_align2hg38/{}.unmapped_hg38.bam".format(config['samples']['id'])
-        "01_align2hg38/{id}.unmapped_hg38.bam"
+        # "Align2hg38/{}.unmapped_hg38.bam".format(config['samples']['id'])
+        "Align2hg38/{id}.unmapped_hg38.bam"
     threads:
         config['threads']['bwa']
     shell:
         "samtools view -@ {threads} -bh -f 4 {input} > {output}"
 
-# remove LCR-hs38_rmsk seq
-rule rm_repeats:
-    input:
-        bam = "01_align2hg38/{id}.unmapped_hg38.bam",
-        region = config['params']['repeats']
-    output:
-        in_bam = "01_align2hg38/{id}.is_repeats.bam",
-        out_bam = "01_align2hg38/{id}.rm_repeats.bam"
-    threads:
-        config['threads']['bwa']
-    shell:
-        "samtools view -@ {threads} {input.bam} -bh -o {output.in_bam} -U {output.out_bam} -L {input.region}"
-
-# get fq1 after rm hg38 and repeats seq.
+# get unmapped_seqid
 rule unmapped_seqid:
     input:
-        out_bam = "01_align2hg38/{id}.rm_repeats.bam"
+        out_bam = "Align2hg38/{id}.unmapped_hg38.bam"
     output:
-        seq_id = "01_align2hg38/{id}.rm_repeats.id"
+        seq_id = "Align2hg38/{id}.unmapped_hg38.id"
     threads:
         config['threads']['bwa']
     shell:
@@ -120,153 +107,98 @@ rule mapped_EBV_seqid:
         cram = "data/{id}.cram",
         index = "data/{id}.cram.crai"
     output:
-        "01_align2hg38/{id}.EBV.seqid"
+        "Align2hg38/{id}.EBV.seqid"
     threads:
         config['threads']['bwa']
     shell:
         "samtools view {input.cram} chrEBV|cut -f1 > {output}"
 
-# merge EBV and rm_repeats.id
-rule merge_EBV_rm_repeats_id:
+# merge EBV and unmapped_seqid
+rule merge_EBV_unmapped_seqid:
     input:
-        repeatid="01_align2hg38/{id}.rm_repeats.id",
-        EBVid = "01_align2hg38/{id}.EBV.seqid"
+        unmappedid="Align2hg38/{id}.unmapped_hg38.id",
+        EBVid = "Align2hg38/{id}.EBV.seqid"
     output:
-        mergeid = "01_align2hg38/{id}.rm_repeats_EBV.id"
+        mergeid = "Align2hg38/{id}.EBV_unmapped.id"
     shell:
-        "cat {input.repeatid} {input.EBVid} |sort -u > {output.mergeid}"
+        "cat {input.unmappedid} {input.EBVid} |sort -u > {output.mergeid}"
 
-# get fq1 after rm hg38 and repeats seq.
+# get fq1 of unmapped seqid.
 rule unmapped_fq1:
     input:
-        seq_id = "01_align2hg38/{id}.rm_repeats_EBV.id",
+        seq_id = "Align2hg38/{id}.EBV_unmapped.id",
         rawfq1 = "data/{id}.R1.fq.gz"
     output:
-        R1_id = "01_align2hg38/{id}.rm_repeats.R1.id",
-        rmrepeats_fq1 = "01_align2hg38/{id}.rm_repeats.R1.fq.gz"
+        R1_id = "Align2hg38/{id}.EBV_unmapped.R1.id",
+        EBV_unmapped_fq1 = "Align2hg38/{id}.EBV_unmapped.R1.fq.gz"
     threads:
         config['threads']['bwa']
     shell:
         "awk '{{print $1\"/1\"}}' {input.seq_id} > {output.R1_id} && "
-        "seqtk subseq {input.rawfq1} {output.R1_id} |gzip > {output.rmrepeats_fq1}"
+        "seqtk subseq {input.rawfq1} {output.R1_id} |gzip > {output.EBV_unmapped_fq1}"
 
-# get fq2 after rm hg38 and repeats seq.
+# get fq2  of unmapped seqid.
 rule unmapped_fq2:
     input:
-        seq_id = "01_align2hg38/{id}.rm_repeats_EBV.id",
+        seq_id = "Align2hg38/{id}.EBV_unmapped.id",
         rawfq2 = "data/{id}.R2.fq.gz"
     output:
-        R2_id = "01_align2hg38/{id}.rm_repeats.R2.id",
-        rmrepeats_fq2 = "01_align2hg38/{id}.rm_repeats.R2.fq.gz"
+        R2_id = "Align2hg38/{id}.EBV_unmapped.R2.id",
+        EBV_unmapped_fq2 = "Align2hg38/{id}.EBV_unmapped.R2.fq.gz"
     threads:
         config['threads']['bwa']
     shell:
         "awk '{{print $1\"/2\"}}' {input.seq_id} > {output.R2_id} && "
-        "seqtk subseq {input.rawfq2} {output.R2_id} |gzip > {output.rmrepeats_fq2} "
-
-# remove Ref T2T seq
-rule Align2T2T:
-    input:
-        ref_T2T = config['params']['ref_T2T'],
-        rmrepeats_fq1 = "01_align2hg38/{}.rm_repeats.R1.fq.gz".format(config['samples']['id']),
-        rmrepeats_fq2 = "01_align2hg38/{}.rm_repeats.R2.fq.gz".format(config['samples']['id'])
-    output:
-        T2T_bam = "02_align2T2T/{id}.T2T.bam"
-    threads:
-        config['threads']['bwa']
-    shell:
-        "bwa mem -C -t {threads} {input.ref_T2T} {input.rmrepeats_fq1} {input.rmrepeats_fq2} | samtools sort -o {output.T2T_bam} -@ 24 -O bam -"
-
-# remove human seq. against T2T
-rule rm_T2T:
-    input:
-        T2T_bam = "02_align2T2T/{id}.T2T.bam"
-    output:
-        unmapped_bam = "02_align2T2T/{id}.unmapped_T2T.bam",
-        seq_id = "02_align2T2T/{id}.rm_T2T.id"
-    threads:
-        config['threads']['bwa']
-    shell:
-        "samtools view -@ {threads} -bh -f 4 {input.T2T_bam} > {output.unmapped_bam} && "
-        "samtools view -@ {threads} {output.unmapped_bam} | cut -f1|sort -u > {output.seq_id}"
-
-# get fq1 after rm T2T.
-rule T2T_unmapped_fq1:
-    input:
-        seq_id = "02_align2T2T/{id}.rm_T2T.id",
-        fq1 = "01_align2hg38/{}.rm_repeats.R1.fq.gz".format(config['samples']['id'])
-    output:
-        R1_id = "02_align2T2T/{id}.rm_T2T.R1.id",
-        rm_T2T_fq1 = "02_align2T2T/{id}.rm_T2T.R1.fq.gz"
-    threads:
-        config['threads']['bwa']
-    shell:
-        "awk '{{print $1\"/1\"}}' {input.seq_id} > {output.R1_id} && "
-        "seqtk subseq {input.fq1} {output.R1_id} |gzip > {output.rm_T2T_fq1}"
-
-# get fq2 after rm T2T.
-rule T2T_unmapped_fq2:
-    input:
-        seq_id = "02_align2T2T/{id}.rm_T2T.id",
-        fq2 = "01_align2hg38/{}.rm_repeats.R2.fq.gz".format(config['samples']['id'])
-    output:
-        R2_id = "02_align2T2T/{id}.rm_T2T.R2.id",
-        rm_T2T_fq2 = "02_align2T2T/{id}.rm_T2T.R2.fq.gz"
-    threads:
-        config['threads']['bwa']
-    shell:
-        "awk '{{print $1\"/2\"}}' {input.seq_id} > {output.R2_id} && "
-        "seqtk subseq {input.fq2} {output.R2_id} |gzip > {output.rm_T2T_fq2}"
+        "seqtk subseq {input.rawfq2} {output.R2_id} |gzip > {output.EBV_unmapped_fq2} "
 
 # rm pangenome + decoy seq.
-
 rule Align2pangenome:
     input:
         ref_pg = config['params']['ref_pangenome'],
-        rm_T2T_fq1 = "02_align2T2T/{id}.rm_T2T.R1.fq.gz",
-        rm_T2T_fq2 = "02_align2T2T/{id}.rm_T2T.R2.fq.gz"
+        EBV_unmapped_fq1 = "Align2hg38/{id}.EBV_unmapped.R1.fq.gz",
+        EBV_unmapped_fq2 = "Align2hg38/{id}.EBV_unmapped.R2.fq.gz"
     output:
-        pg_bam = "03_align2pg/{id}.pg.bam"
+        pg_bam = "Align2pg/{id}.pg.bam"
     threads:
         config['threads']['bwa']
     shell:
-        "bwa mem -C -t {threads} {input.ref_pg} {input.rm_T2T_fq1} {input.rm_T2T_fq2} | samtools sort -o {output.pg_bam} -@ {threads} -O bam -"
+        "bwa mem -C -t {threads} {input.ref_pg} {input.EBV_unmapped_fq1} {input.EBV_unmapped_fq2} | samtools sort -o {output.pg_bam} -@ {threads} -O bam -"
 
 # remove human seq. against T2T
 rule rm_pg:
     input:
-        pg_bam = "03_align2pg/{id}.pg.bam"
+        pg_bam = "Align2pg/{id}.pg.bam"
     output:
-        unmapped_bam = "03_align2pg/{id}.unmapped_pg.bam",
-        seq_id = "03_align2pg/{id}.rm_pg.id"
+        unmapped_bam = "Align2pg/{id}.unmapped_pg.bam",
+        seq_id = "Align2pg/{id}.rm_pg.id"
     threads:
         config['threads']['bwa']
     shell:
         "samtools view -@ {threads} -bh -f 4 {input.pg_bam} > {output.unmapped_bam} && "
         "samtools view -@ {threads} {output.unmapped_bam} | cut -f1|sort -u > {output.seq_id}"
 
-# get fq1 after rm T2T.
+# get fq1 after rm pangenome.
 rule pg_unmapped_fq1:
     input:
-        seq_id = "03_align2pg/{id}.rm_pg.id",
-        fq1 = "02_align2T2T/{id}.rm_T2T.R1.fq.gz"
+        seq_id = "Align2pg/{id}.rm_pg.id",
+        fq1 = "Align2hg38/{id}.EBV_unmapped.R1.fq.gz"
     output:
-        R1_id = "03_align2pg/{id}.rm_pg.R1.id",
-        rm_pg_fq1 = "03_align2pg/{id}.rm_pg.R1.fq.gz"
+        R1_id = "Align2pg/{id}.rm_pg.R1.id",
+        rm_pg_fq1 = "Align2pg/{id}.rm_pg.R1.fq.gz"
     threads:
         config['threads']['bwa']
     shell:
         "awk '{{print $1\"/1\"}}' {input.seq_id} > {output.R1_id} && "
         "seqtk subseq {input.fq1} {output.R1_id} |gzip > {output.rm_pg_fq1}"
 
-# get fq2 after rm T2T.
+# get fq2 after rm pangenome.
 rule pg_unmapped_fq2:
     input:
-        seq_id = "03_align2pg/{id}.rm_pg.id",
-        fq2 = "02_align2T2T/{id}.rm_T2T.R2.fq.gz"
+        seq_id = "Align2pg/{id}.rm_pg.id",
+        fq2 = "Align2hg38/{id}.EBV_unmapped.R2.fq.gz"
     output:
-        R2_id = "03_align2pg/{id}.rm_pg.R2.id",
-        rm_pg_fq2 = "03_align2pg/{id}.rm_pg.R2.fq.gz"
+        R2_id = "Align2pg/{id}.rm_pg.R2.id",
+        rm_pg_fq2 = "Align2pg/{id}.rm_pg.R2.fq.gz"
     threads:
         config['threads']['bwa']
     shell:

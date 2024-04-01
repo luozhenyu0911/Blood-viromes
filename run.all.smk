@@ -7,16 +7,16 @@ def run_all_input(wildcards):
     run_all_files = []
     # if mapping is set to true add fragment calculation metrics
     if config['modules']['mapping']:
-
-        run_all_files.append("03_align2pg/{}.rm_pg.R1.fq.gz".format(config['samples']['id']))
-        run_all_files.append("03_align2pg/{}.rm_pg.R2.fq.gz".format(config['samples']['id']))
-        run_all_files.append('04_annotation/{}.krona.html'.format(config['samples']['id']))
-        run_all_files.append('04_annotation/{}_viral_unclass.R1.fa'.format(config['samples']['id']))
-        run_all_files.append('04_annotation/{}_viral_unclass.R2.fa'.format(config['samples']['id']))
-        run_all_files.append("04_annotation/{}.k2_report.txt".format(config['samples']['id']))
+        run_all_files.append("Align2pg/{}.rm_pg.R1.fq.gz".format(config['samples']['id']))
+        run_all_files.append("Align2pg/{}.rm_pg.R2.fq.gz".format(config['samples']['id']))
+        run_all_files.append('Anatation/{}.krona.html'.format(config['samples']['id']))
+        run_all_files.append('Anatation/{}_viral_unclass.R1.fa'.format(config['samples']['id']))
+        run_all_files.append('Anatation/{}_viral_unclass.R2.fa'.format(config['samples']['id']))
+        run_all_files.append("Anatation/{}.k2_report.txt".format(config['samples']['id']))
         run_all_files.append("metrics/{}_seq_count.txt".format(config['samples']['id']))
-        run_all_files.append("04_annotation/{}_virus_unclss.blastn.res.txt".format(config['samples']['id']))
-        run_all_files.append("04_annotation/{}_virus_unclss.blastn.res.anno.txt".format(config['samples']['id']))
+        run_all_files.append("Blastn/{}_virus_unclss.blastn.res.txt".format(config['samples']['id']))
+        run_all_files.append("Blastn/{}_virus_unclss.blastn.res.anno.txt".format(config['samples']['id']))
+        run_all_files.append("Blastn/{}.geneid_anno.txt".format(config['samples']['id']))
     elif config['modules']['assembly']:
         run_all_files.append('06_assembly/01_metaspades_quast')
         run_all_files.append('06_assembly/02_spades_quast')
@@ -37,5 +37,5 @@ include: smk_path+"/map.smk"
 include: smk_path+"/annotation.smk"
 include: smk_path+"/annotation_viral.smk"
 include: smk_path+"/metrics.smk"
-include: smk_path+"/assemly.smk"
+include: smk_path+"/assembly.smk"
 include: smk_path+"/singleton2virus.smk"

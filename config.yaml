@@ -4,7 +4,7 @@ samples:
     # fq1: "input/14100648BFF2_6X_R1.fq.gz"
     # fq2: "input/14100648BFF2_6X_R2.fq.gz"
     id: "00114031182M22BFF2"
-    fq_path: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/20240223_20_sample/input"
+    fq_path: "/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/20240223_40_sample/input"
 modules:
     # Should snakemake do stlfr specific analyses, false if the library isn't of linked reads
     mapping: True
