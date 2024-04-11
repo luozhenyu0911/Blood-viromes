@@ -1,8 +1,8 @@
 rule classify_kraken2:
     input:
         db = config['params']['k2_db'],
-        fq1 = "Align2pg/{id}.rm_pg.R1.fq.gz",
-        fq2 = "Align2pg/{id}.rm_pg.R2.fq.gz"
+        fq1 = "Align2hg38/{id}.EBV_unmapped.R1.fq.gz",
+        fq2 = "Align2hg38/{id}.EBV_unmapped.R2.fq.gz"
     output:
         # unclassified = "Anatation/{id}.Unclass#.fa",
         # classified = "Anatation/{id}.Class#.fa",
@@ -55,8 +55,8 @@ rule extract_viral_reads:
     input:
         out_k2 = "Anatation/{id}.k2",
         report = "Anatation/{id}.k2_report.txt",
-        fq1 = "Align2pg/{id}.rm_pg.R1.fq.gz",
-        fq2 = "Align2pg/{id}.rm_pg.R2.fq.gz"
+        fq1 = "Align2hg38/{id}.EBV_unmapped.R1.fq.gz",
+        fq2 = "Align2hg38/{id}.EBV_unmapped.R2.fq.gz"
     output:
         fa1 = 'Anatation/{id}.tid10239.R1.fa',
         fa2 = 'Anatation/{id}.tid10239.R2.fa'
@@ -70,8 +70,8 @@ rule extract_unclass_reads:
     input:
         out_k2 = "Anatation/{id}.k2",
         report = "Anatation/{id}.k2_report.txt",
-        fq1 = "Align2pg/{id}.rm_pg.R1.fq.gz",
-        fq2 = "Align2pg/{id}.rm_pg.R2.fq.gz"
+        fq1 = "Align2hg38/{id}.EBV_unmapped.R1.fq.gz",
+        fq2 = "Align2hg38/{id}.EBV_unmapped.R2.fq.gz"
     output:
         fa1 = 'Anatation/{id}.unclass.R1.fa',
         fa2 = 'Anatation/{id}.unclass.R2.fa'

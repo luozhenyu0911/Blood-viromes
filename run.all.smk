@@ -7,8 +7,6 @@ def run_all_input(wildcards):
     run_all_files = []
     # if mapping is set to true add fragment calculation metrics
     if config['modules']['mapping']:
-        run_all_files.append("Align2pg/{}.rm_pg.R1.fq.gz".format(config['samples']['id']))
-        run_all_files.append("Align2pg/{}.rm_pg.R2.fq.gz".format(config['samples']['id']))
         run_all_files.append('Anatation/{}.krona.html'.format(config['samples']['id']))
         run_all_files.append('Anatation/{}_viral_unclass.R1.fa'.format(config['samples']['id']))
         run_all_files.append('Anatation/{}_viral_unclass.R2.fa'.format(config['samples']['id']))

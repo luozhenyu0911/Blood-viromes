@@ -2,7 +2,6 @@ def get_all_fq_fa(wildcards):
     all_fq_fa = []
     # all_fq_fa.append("data/{}.R1.fq.gz".format(config['samples']['id']))
     all_fq_fa.append("Align2hg38/{}.EBV_unmapped.R1.fq.gz".format(config['samples']['id']))
-    all_fq_fa.append("Align2pg/{}.rm_pg.R1.fq.gz".format(config['samples']['id']))
     all_fq_fa.append('Anatation/{}_viral_unclass.R1.fa'.format(config['samples']['id']))
     return all_fq_fa
     
